@@ -4,12 +4,23 @@ import os
 import vk_api
 
 from dotenv import load_dotenv
+from requests.adapters import HTTPAdapter
 
 
 load_dotenv()
 
 LOGIN = os.environ["LOGIN"]
 PASSWORD = os.environ["PASSWORD"]
+
+
+class MyHTTPAdapter(HTTPAdapter):
+    def __init__(self, *args, **kwargs):
+        self.timeout = kwargs['timeout']
+        super(MyHTTPAdapter, self).__init__(*args, **kwargs)
+
+    def send(self, *args, **kwargs):
+        kwargs['timeout'] = self.timeout
+        return super(MyHTTPAdapter, self).send(*args, **kwargs)
 
 
 def auth_handler():
@@ -41,12 +52,18 @@ def main():
     login, password = LOGIN, PASSWORD
     vk_session = vk_api.VkApi(
         login=login,
-        password=None,
+        password=password,
         # функция для обработки двухфакторной аутентификации
         auth_handler=auth_handler,
-        captcha_handler=captcha_handler,
+        # captcha_handler=captcha_handler,
         # app_id=6287487,
     )
+
+    # vk_session.http.proxies = {
+    #     'http': '',
+    # }
+
+    # vk_session.http.mount('http://', HTTPAdapter(max_retries=10))
 
     try:
         vk_session.auth()
